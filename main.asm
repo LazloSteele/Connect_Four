@@ -9,20 +9,20 @@
 # Algorithmic Description:
 ####################################################################################################
 				.data
-welcome_msg:	.asciiz "\nWelcome to Connect Four. Let's start a two player game..."
+welcome_msg:	.asciiz "\nWelcome to Connect Four. Let's start a two player game...\n"
 plyr_1_prmtp:	.asciiz "\nPlayer 1 select a column [1-7] > "
 plyr_2_prmtp:	.asciiz "\nPlayer 2 select a column [1-7] > "
 repeat_msg:		.asciiz "\nGo again? Y/N > "
 invalid_msg:	.asciiz "\nInvalid input. Try again!\n"
 bye: 			.asciiz "Toodles! ;)"
 
-row_1_view:		.asciiz "|*|*|*|*|*|*|*|"
-row_2_view:		.asciiz "|*|*|*|*|*|*|*|"
-row_3_view:		.asciiz "|*|*|*|*|*|*|*|"
-row_4_view:		.asciiz "|*|*|*|*|*|*|*|"
-row_5_view:		.asciiz "|*|*|*|*|*|*|*|"
-row_6_view:		.asciiz "|*|*|*|*|*|*|*|"
-bottom:			.asciiz "|1|2|3|4|5|6|7|"
+row_1_view:		.asciiz "\n|*|*|*|*|*|*|*|"
+row_2_view:		.asciiz "\n|*|*|*|*|*|*|*|"
+row_3_view:		.asciiz "\n|*|*|*|*|*|*|*|"
+row_4_view:		.asciiz "\n|*|*|*|*|*|*|*|"
+row_5_view:		.asciiz "\n|*|*|*|*|*|*|*|"
+row_6_view:		.asciiz "\n|*|*|*|*|*|*|*|"
+bottom:			.asciiz "\n|1|2|3|4|5|6|7|\n"
 
 				.align	2
 row_1_state:	.word	0, 0, 0, 0, 0, 0, 0
@@ -47,6 +47,8 @@ buffer:			.space	2
 main:								#
 	jal		welcome					# welcome the user
 									#
+	jal		game_loop				#
+									#
 	j		again					#
 									#
 ####################################################################################################
@@ -63,6 +65,42 @@ welcome:							#
 	syscall							# and print
 									#
 	jr	$ra							# return to caller
+									#
+####################################################################################################
+# function: game_loop
+# purpose: to control the gameplay
+# registers used:
+####################################################################################################
+game_loop:
+	move	$s0, $ra						# save return address for nesting
+	jal 	display_board
+	move	$ra, $s0						# restore return address for nesting
+
+	jr 		$ra
+####################################################################################################
+# function: display_board
+# purpose: to display the current game state to player
+# registers used:
+####################################################################################################
+display_board:
+	li		$v0, 4					# 
+	
+	la		$a0, row_1_view			# load welcome message	
+	syscall							# and print
+	la		$a0, row_2_view			# load welcome message	
+	syscall							# and print
+	la		$a0, row_3_view			# load welcome message	
+	syscall							# and print
+	la		$a0, row_4_view			# load welcome message	
+	syscall							# and print
+	la		$a0, row_5_view			# load welcome message	
+	syscall							# and print
+	la		$a0, row_6_view			# load welcome message	
+	syscall							# and print
+	la		$a0, bottom				# load welcome message	
+	syscall							# and print
+									#
+	jr		$ra						#
 									#
 ####################################################################################################
 # function: re-enter
