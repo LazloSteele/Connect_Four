@@ -10,11 +10,11 @@
 ####################################################################################################
 				.data
 welcome_msg:	.asciiz "\nWelcome to Connect Four. Let's start a two player game...\n"
-plyr_1_prmtp:	.asciiz "\nPlayer 1 select a column [1-7] > "
-plyr_2_prmtp:	.asciiz "\nPlayer 2 select a column [1-7] > "
+plyr_1_prmpt:	.asciiz "\nPlayer 1 select a column [1-7] > "
+plyr_2_prmpt:	.asciiz "\nPlayer 2 select a column [1-7] > "
 repeat_msg:		.asciiz "\nGo again? Y/N > "
 invalid_msg:	.asciiz "\nInvalid input. Try again!\n"
-bye: 			.asciiz "Toodles! ;)"
+bye: 			.asciiz "\nToodles! ;)"
 
 row_1_view:		.asciiz "\n|*|*|*|*|*|*|*|"
 row_2_view:		.asciiz "\n|*|*|*|*|*|*|*|"
@@ -72,11 +72,75 @@ welcome:							#
 # registers used:
 ####################################################################################################
 game_loop:
-	move	$s0, $ra						# save return address for nesting
-	jal 	display_board
-	move	$ra, $s0						# restore return address for nesting
+	player_1_turn:
+		move	$s0, $ra						# save return address for nesting
+		jal 	display_board
+		move	$ra, $s0						# restore return address for nesting
+		
+		li		$v0, 4
+		la		$a0, plyr_1_prmpt
+		syscall
+		
+		li		$v0, 8
+		la		$a0, buffer
+		li		$a1, 2
+		syscall
 
+		lb		$t0, 0($a0)				# load first byte from buffer
+									#
+		li		$t1, '1'				# 
+		blt 	$t0, $t1, invalid_plyr_1	# if it is less than '1' then invalid
+		li		$t1, '7'				#
+		bgt 	$t0, $t1, invalid_plyr_1	# if it is greater than '4' then invalid
+									#
+		addi 	$t0, $t0, -48			# subtract '0' to store as integer in flag
+									#
+
+		move	$s0, $ra						# save return address for nesting
+		jal		reset_buffer				# clear the buffer
+		move	$ra, $s0						# restore return address for nesting
+	
+	player_2_turn:
+		move	$s0, $ra						# save return address for nesting
+		jal 	display_board
+		move	$ra, $s0						# restore return address for nesting
+		
+		li		$v0, 4
+		la		$a0, plyr_2_prmpt
+		syscall	
+		
+		li		$v0, 8
+		la		$a0, buffer
+		li		$a1, 2
+		syscall
+
+		lb		$t0, 0($a0)				# load first byte from buffer
+									#
+		li		$t1, '1'				# 
+		blt 	$t0, $t1, invalid_plyr_2	# if it is less than '1' then invalid
+		li		$t1, '7'				#
+		bgt 	$t0, $t1, invalid_plyr_2	# if it is greater than '4' then invalid
+									#
+		addi 	$t0, $t0, -48			# subtract '0' to store as integer in flag
+									#
+		move	$s0, $ra						# save return address for nesting
+		jal		reset_buffer				# clear the buffer
+		move	$ra, $s0						# restore return address for nesting
+		
 	jr 		$ra
+	
+	invalid_plyr_1:
+		la	$a0, invalid_msg		# 
+		li	$v0, 4					#
+		syscall						# print invalid message
+		
+		j player_1_turn
+	invalid_plyr_2:
+		la	$a0, invalid_msg		# 
+		li	$v0, 4					#
+		syscall						# print invalid message
+		
+		j player_2_turn
 ####################################################################################################
 # function: display_board
 # purpose: to display the current game state to player
@@ -111,7 +175,7 @@ display_board:
 ####################################################################################################
 re_enter:							#
 	la	$a0, buffer					# load buffer address
-	li	$a1, 33						# length of buffer
+	li	$a1, 2						# length of buffer
 	jal	reset_buffer				# clear the buffer
 	j	main						# let's do the time warp again!
 									#
@@ -178,7 +242,7 @@ again:							#
 	syscall						#
 								#
 	la $a0, buffer				#
-	la $a1, 4					#
+	la $a1, 2					#
 	li $v0, 8					#
 	syscall						#
 								#
