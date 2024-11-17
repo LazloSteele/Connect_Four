@@ -98,7 +98,7 @@ game_loop:
 		move	$s0, $ra
 		move	$a0, $v0
 		li		$a1, 1
-		jal		format_input
+		jal		check_tile
 		move	$ra, $s0
 	
 	player_2_turn:
@@ -227,7 +227,7 @@ check_tile:
 	add		$t2, $t2, $t0				# move selector to the correct column
 	lw		$t3, 0($t2)					#
 	bnez	$t3, invalid_play			# column full
-											#
+										#
 	li		$t7, 0
 	check_next_row:
 		la	$t5, next_row
