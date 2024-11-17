@@ -2,7 +2,7 @@
 # Author: Lazlo F. Steele
 # Due Date : Nov. 16, 2024 Course: CSC2025-2H1
 # Created: Nov. 16, 2024
-# Last Modified: Nov. 16, 2024
+# Last Modified: Nov. 17, 2024
 # Functional Description: Play connect four.
 # Language/Architecture: MIPS 32 Assembly
 ####################################################################################################
@@ -16,21 +16,15 @@ repeat_msg:		.asciiz "\nGo again? Y/N > "
 invalid_msg:	.asciiz "\nInvalid input. Try again!\n"
 bye: 			.asciiz "\nToodles! ;)"
 
-row_1_view:		.asciiz "\n|*|*|*|*|*|*|*|"
-row_2_view:		.asciiz "\n|*|*|*|*|*|*|*|"
-row_3_view:		.asciiz "\n|*|*|*|*|*|*|*|"
-row_4_view:		.asciiz "\n|*|*|*|*|*|*|*|"
-row_5_view:		.asciiz "\n|*|*|*|*|*|*|*|"
-row_6_view:		.asciiz "\n|*|*|*|*|*|*|*|"
+newline:		.asciiz "\n"
+bar:			.asciiz	"|"
+empty_glyph:	.asciiz "*"
+p1_glyph:		.asciiz "X"
+p2_glyph:		.asciiz	"O"
 bottom:			.asciiz "\n|1|2|3|4|5|6|7|\n"
 
 				.align	2
-row_1_state:	.word	0, 0, 0, 0, 0, 0, 0
-row_2_state:	.word	0, 0, 0, 0, 0, 0, 0
-row_3_state:	.word	0, 0, 0, 0, 0, 0, 0
-row_4_state:	.word	0, 0, 0, 0, 0, 0, 0
-row_5_state:	.word	0, 0, 0, 0, 0, 0, 0
-row_6_state:	.word	0, 0, 0, 0, 0, 0, 0
+board_state:	.word	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 buffer:			.space	2
 				
@@ -148,21 +142,36 @@ game_loop:
 ####################################################################################################
 display_board:
 	li		$v0, 4					# 
+	li		$t0, 0					# row counter
+
 	
-	la		$a0, row_1_view			# load welcome message	
-	syscall							# and print
-	la		$a0, row_2_view			# load welcome message	
-	syscall							# and print
-	la		$a0, row_3_view			# load welcome message	
-	syscall							# and print
-	la		$a0, row_4_view			# load welcome message	
-	syscall							# and print
-	la		$a0, row_5_view			# load welcome message	
-	syscall							# and print
-	la		$a0, row_6_view			# load welcome message	
-	syscall							# and print
-	la		$a0, bottom				# load welcome message	
-	syscall							# and print
+	new_row:
+		beq		$t0, 6, board_done
+		li		$t1, 0					# column counter
+		
+		li		$v0, 11
+		la		$a0, newline
+		lb		$a0, 0($a0)
+		syscall
+		la		$a0, bar
+		lb		$a0, 0($a0)
+		syscall
+		new_column:
+			la		$t2, board_state
+			lw		$t3, 0($t2)
+			
+			la		$a0, bar
+			lb		$a0, 0($a0)
+			syscall
+			
+			addi	$t1, $t1, 1
+			bne		$t1, 8, new_column
+		addi	$t0, $t0, 1
+		j		new_row
+	board_done:
+		la		$a0, bottom
+		li		$v0, 4
+		syscall
 									#
 	jr		$ra						#
 									#
