@@ -73,55 +73,33 @@ welcome:							#
 ####################################################################################################
 game_loop:
 	player_1_turn:
+		li		$v1, 0
+	
 		move	$s0, $ra						# save return address for nesting
 		jal 	display_board
 		move	$ra, $s0						# restore return address for nesting
 		
-		li		$v0, 4
+		move	$s0, $ra
 		la		$a0, plyr_1_prmpt
-		syscall
+		jal		get_input
+		move	$ra, $s0
 		
-		li		$v0, 8
-		la		$a0, buffer
-		li		$a1, 2
-		syscall
-
-		lb		$t0, 0($a0)					# load first byte from buffer
-											#
-		li		$t1, '1'					# 
-		blt 	$t0, $t1, invalid_plyr_1	# if it is less than '1' then invalid
-		li		$t1, '7'					#
-		bgt 	$t0, $t1, invalid_plyr_1	# if it is greater than '4' then invalid
-											#
-		addi 	$t0, $t0, -48				# subtract '0' to store as integer
-		addi	$t0, $t0, -1				# subtract 1 for 0 based indexing
-		li		$t1, 4						#
-		mul		$t0, $t0, $t1				# multiply by 4 for word offset
-											#
-		la		$t2, board_state			#
-		add		$t2, $t2, $t0				# move selector to the correct column
-		lw		$t3, 0($t2)					#
-		bnez	$t3, invalid_plyr_1			# column full
+		move	$s0, $ra
+		move	$a0, $v0
+		jal		validate_input
+		move	$ra, $s0		
+		beq		$v1, 1, player_1_turn		# if invalid play, try again
 		
-		li		$t7, 0
-		check_next_row1:
-			la	$t5, next_row
-			lw	$t5, 0($t5)
-			
-			add $t6, $t2, $t5				# check next row down
-			lw	$t6, 0($t6)
-			
-			bnez $t6, place_glyph1			# if next row down not empty then place the glyph
-			
-			addi $t7, $t7, 1
-			beq		$t7, 6, place_glyph1
-
-			add	$t2, $t2, $t5
-			j	check_next_row1
-			
-		place_glyph1:
-			li		$t4, 1
-			sw		$t4, 0($t2)
+		move	$s0, $ra
+		move	$a0, $v0
+		jal		format_input
+		move	$ra, $s0	
+		
+		move	$s0, $ra
+		move	$a0, $v0
+		li		$a1, 1
+		jal		format_input
+		move	$ra, $s0
 	
 	player_2_turn:
 		move	$s0, $ra						# save return address for nesting
@@ -178,19 +156,112 @@ game_loop:
 	
 	j		game_loop	
 	jr 		$ra
-	
-	invalid_plyr_1:
-		la	$a0, invalid_msg		# 
-		li	$v0, 4					#
-		syscall						# print invalid message
-		
-		j player_1_turn
+
 	invalid_plyr_2:
 		la	$a0, invalid_msg		# 
 		li	$v0, 4					#
 		syscall						# print invalid message
 		
 		j player_2_turn
+
+####################################################################################################
+# function: get_input
+# purpose: to get the column the player would like to drop their token in.
+# registers used:
+####################################################################################################
+get_input:
+		li		$v0, 4
+		syscall
+		
+		li		$v0, 8
+		la		$a0, buffer
+		li		$a1, 2
+		syscall
+
+		lb		$v0, 0($a0)					# load first byte from buffer
+		jr		$ra
+####################################################################################################
+# function: validate_input
+# purpose: to ensure input is a valid column and to .
+# registers used:
+####################################################################################################
+validate_input:								#
+		move	$t0, $a0					#
+											#
+		li		$t1, '1'					# 
+		blt 	$t0, $t1, invalid_play		# if it is less than '1' then invalid
+		li		$t1, '7'					#
+		bgt 	$t0, $t1, invalid_play		# if it is greater than '4' then invalid
+											#
+		move	$v0, $t0					# return the validated user input value
+											#
+		jr		$ra							#
+											#
+####################################################################################################
+# function: format_input
+# purpose: to format input appropriately
+# registers used:
+####################################################################################################
+format_input:								#
+		move	$t0, $a0					#
+											#
+		addi 	$t0, $t0, -48				# subtract '0' to store as integer
+		addi	$t0, $t0, -1				# subtract 1 for 0 based indexing
+		li		$t1, 4						#
+		mul		$t0, $t0, $t1				# multiply by 4 for word offset
+											#
+		move	$v0, $t0					#
+											#
+		jr		$ra							#
+											#
+####################################################################################################
+# function: check tile
+# purpose: to 
+# registers used:
+####################################################################################################
+check_tile:
+	move $t0, $a0
+	move $t1, $a1
+
+	la		$t2, board_state			#
+	add		$t2, $t2, $t0				# move selector to the correct column
+	lw		$t3, 0($t2)					#
+	bnez	$t3, invalid_play			# column full
+											#
+	li		$t7, 0
+	check_next_row:
+		la	$t5, next_row
+		lw	$t5, 0($t5)
+		
+		add $t6, $t2, $t5				# check next row down
+		lw	$t6, 0($t6)
+		
+		bnez 	$t6, place_glyph			# if next row down not empty then place the glyph
+			
+		addi	$t7, $t7, 1
+		beq		$t7, 6, place_glyph
+
+		add	$t2, $t2, $t5
+		j	check_next_row
+		
+	place_glyph:
+		sw		$t1, 0($t2)
+		
+	jr		$ra
+											#									
+####################################################################################################
+# function: invalid_play
+# purpose: to raise an invalid play flag and return to caller
+# registers used:
+####################################################################################################
+invalid_play:
+	la	$a0, invalid_msg		# 
+	li	$v0, 4					#
+	syscall						# print invalid message
+	
+	li	$v1, 1
+	
+	jr $ra
 ####################################################################################################
 # function: display_board
 # purpose: to display the current game state to player
