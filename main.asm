@@ -24,7 +24,13 @@ p2_glyph:		.asciiz	"O"
 bottom:			.asciiz "\n|1|2|3|4|5|6|7|\n"
 
 				.align	2
-board_state:	.word	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+board_state:	.word	0, 0, 0, 0, 0, 0, 0, 
+						0, 0, 0, 0, 0, 0, 0, 
+						0, 0, 0, 0, 0, 0, 0, 
+						0, 0, 0, 0, 0, 0, 0, 
+						0, 0, 0, 0, 0, 0, 0, 
+						0, 0, 0, 0, 0, 0, 0
+next_row:		.word	28
 
 buffer:			.space	2
 				
@@ -80,19 +86,42 @@ game_loop:
 		li		$a1, 2
 		syscall
 
-		lb		$t0, 0($a0)				# load first byte from buffer
-									#
-		li		$t1, '1'				# 
+		lb		$t0, 0($a0)					# load first byte from buffer
+											#
+		li		$t1, '1'					# 
 		blt 	$t0, $t1, invalid_plyr_1	# if it is less than '1' then invalid
-		li		$t1, '7'				#
+		li		$t1, '7'					#
 		bgt 	$t0, $t1, invalid_plyr_1	# if it is greater than '4' then invalid
-									#
-		addi 	$t0, $t0, -48			# subtract '0' to store as integer in flag
-									#
+											#
+		addi 	$t0, $t0, -48				# subtract '0' to store as integer
+		addi	$t0, $t0, -1				# subtract 1 for 0 based indexing
+		li		$t1, 4						#
+		mul		$t0, $t0, $t1				# multiply by 4 for word offset
+											#
+		la		$t2, board_state			#
+		add		$t2, $t2, $t0				# move selector to the correct column
+		lw		$t3, 0($t2)					#
+		bnez	$t3, invalid_plyr_1			# column full
+		
+		li		$t7, 0
+		check_next_row1:
+			la	$t5, next_row
+			lw	$t5, 0($t5)
+			
+			add $t6, $t2, $t5				# check next row down
+			lw	$t6, 0($t6)
+			
+			bnez $t6, place_glyph1			# if next row down not empty then place the glyph
+			
+			addi $t7, $t7, 1
+			beq		$t7, 6, place_glyph1
 
-		move	$s0, $ra						# save return address for nesting
-		jal		reset_buffer				# clear the buffer
-		move	$ra, $s0						# restore return address for nesting
+			add	$t2, $t2, $t5
+			j	check_next_row1
+			
+		place_glyph1:
+			li		$t4, 1
+			sw		$t4, 0($t2)
 	
 	player_2_turn:
 		move	$s0, $ra						# save return address for nesting
@@ -108,19 +137,46 @@ game_loop:
 		li		$a1, 2
 		syscall
 
-		lb		$t0, 0($a0)				# load first byte from buffer
-									#
-		li		$t1, '1'				# 
+		lb		$t0, 0($a0)					# load first byte from buffer
+											#
+		li		$t1, '1'					# 
 		blt 	$t0, $t1, invalid_plyr_2	# if it is less than '1' then invalid
-		li		$t1, '7'				#
+		li		$t1, '7'					#
 		bgt 	$t0, $t1, invalid_plyr_2	# if it is greater than '4' then invalid
-									#
-		addi 	$t0, $t0, -48			# subtract '0' to store as integer in flag
-									#
-		move	$s0, $ra						# save return address for nesting
-		jal		reset_buffer				# clear the buffer
-		move	$ra, $s0						# restore return address for nesting
+											#
+		addi 	$t0, $t0, -48				# subtract '0' to store as integer in flag
+		addi	$t0, $t0, -1				# subtract 1 for 0 based indexing
+		li		$t1, 4						#
+		mul		$t0, $t0, $t1				# multiply by 4 for word offset
 		
+		la		$t2, board_state			#
+		add		$t2, $t2, $t0				# move selector to the correct column
+		lw		$t3, 0($t2)					#
+		bnez	$t3, invalid_plyr_2			# column full
+		
+		li		$t7, 0
+		check_next_row2:
+			la	$t5, next_row
+			lw	$t5, 0($t5)
+			
+			add $t6, $t2, $t5				# check next row down
+			lw	$t6, 0($t6)
+			
+			bnez $t6, place_glyph2			# if next row down not empty then place the glyph
+
+			addi $t7, $t7, 1			
+			beq	 $t7, 6, place_glyph2
+			
+			add	$t2, $t2, $t5
+			j	check_next_row2
+			
+		place_glyph2:
+			li		$t4, 2
+			sw		$t4, 0($t2)									
+											#
+
+	
+	j		game_loop	
 	jr 		$ra
 	
 	invalid_plyr_1:
