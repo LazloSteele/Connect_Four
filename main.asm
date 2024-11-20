@@ -109,7 +109,7 @@ game_loop:									#
 # purpose: 
 # registers used:
 ####################################################################################################
-game_turn:
+game_turn:								#
 	move	$s3, $a0					# player prompt
 	move	$s4, $a1					# player number
 										#
@@ -155,20 +155,20 @@ game_turn:
 # purpose: to get the column the player would like to drop their token in.
 # registers used:
 ####################################################################################################
-get_input:
-		li		$v0, 4
-		syscall
-		
-		li		$v0, 8
-		la		$a0, buffer
-		li		$a1, 2
-		syscall
-
+get_input:									#
+		li		$v0, 4						#
+		syscall								# print player prompt
+											#
+		li		$v0, 8						#
+		la		$a0, buffer					#
+		li		$a1, 2						#
+		syscall								# get player input
+											#
 		lb		$v0, 0($a0)					# load first byte from buffer
-		jr		$ra
+		jr		$ra							#
 ####################################################################################################
 # function: validate_input
-# purpose: to ensure input is a valid column and to .
+# purpose: to ensure input is a valid column.
 # registers used:
 ####################################################################################################
 validate_input:								#
@@ -201,40 +201,40 @@ format_input:								#
 		jr		$ra							#
 											#
 ####################################################################################################
-# function: check tile
+# function: check_tile
 # purpose: to 
 # registers used:
 ####################################################################################################
-check_tile:
-	move $t0, $a0
-	move $t1, $a1
-
+check_tile:								#
+	move $t0, $a0						# formatted input
+	move $t1, $a1						# player value
+										#
 	la		$t2, board_state			#
 	add		$t2, $t2, $t0				# move selector to the correct column
 	lw		$t3, 0($t2)					#
-	bnez	$t3, invalid_play			# column full
+	bnez	$t3, invalid_play			# if column full then not valid play
 										#
-	li		$t7, 0
-	check_next_row:
-		la	$t5, next_row
-		lw	$t5, 0($t5)
-		
+	li		$t7, 0						# check for bottom of column 0 is top, 6 is bottom
+	check_next_row:						#
+		la	$t5, next_row				# 
+		lw	$t5, 0($t5)					# load value for 7 word offset
+										#
 		add $t6, $t2, $t5				# check next row down
-		lw	$t6, 0($t6)
-		
-		bnez 	$t6, place_glyph			# if next row down not empty then place the glyph
-			
-		addi	$t7, $t7, 1
-		beq		$t7, 6, place_glyph
-
-		add	$t2, $t2, $t5
-		j	check_next_row
-		
-	place_glyph:
-		sw		$t1, 0($t2)
-		
-	jr		$ra
-											#									
+		lw	$t6, 0($t6)					#
+										#
+		bnez 	$t6, place_glyph		# if next row down not empty then place the glyph
+										#
+		addi	$t7, $t7, 1				# iterate the row counter to check for bottom of column
+		beq		$t7, 6, place_glyph		# if bottom of column then place the token
+										#
+		add	$t2, $t2, $t5				# iterate to next row down
+		j	check_next_row				# and repeat
+										#
+	place_glyph:						#
+		sw		$t1, 0($t2)				# store the player value in the appropriate cell
+										#
+	jr		$ra							# return to caller
+										#									
 ####################################################################################################
 # function: check_victory
 # purpose: to check if a player wins in their turn
