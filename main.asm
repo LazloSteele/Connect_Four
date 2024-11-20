@@ -7,6 +7,15 @@
 # Language/Architecture: MIPS 32 Assembly
 ####################################################################################################
 # Algorithmic Description:
+#	welcome user
+#	while valid plays exist and no player has won:
+#		for each player:
+#			choose column:
+#				if column is full then try again, otherwise...
+#				token drops to greatest empty row in chosen column
+#				if there are four in a row player wins
+#			iterate player
+#	play again?
 ####################################################################################################
 				.data
 welcome_msg:	.asciiz "\nWelcome to Connect Four. Let's start a two player game...\n"
@@ -15,6 +24,7 @@ plyr_2_prmpt:	.asciiz "\nPlayer 2 select a column [1-7] > "
 p1_wins:		.asciiz "\nPlayer 1 wins!"
 p2_wins:		.asciiz "\nPlayer 2 wins!"
 repeat_msg:		.asciiz "\nGo again? Y/N > "
+cats_game_msg:	.asciiz "\nCat's Game...\n"
 invalid_msg:	.asciiz "\nInvalid input. Try again!\n"
 bye: 			.asciiz "\nToodles! ;)"
 
@@ -50,9 +60,8 @@ buffer:			.space	2
 main:								#
 	jal		welcome					# welcome the user
 									#
-	jal		game_loop				#
-									#
-	j		again					#
+	li		$a0, 0					# 0 tokens placed
+	jal		game_loop_prep			# play the game!
 									#
 ####################################################################################################
 # function: welcome
@@ -74,6 +83,8 @@ welcome:							#
 # purpose: to control the gameplay
 # registers used:
 ####################################################################################################
+game_loop_prep:
+	move $s2, $a0
 game_loop:
 	player_1_turn:
 		li		$v1, 0
@@ -104,6 +115,8 @@ game_loop:
 		jal		check_tile
 		move	$ra, $s0
 		beq		$v1, 1, player_1_turn		# if invalid play, try again
+		
+		addi	$s2, $s2, 1
 		
 		move	$s0, $ra
 		jal		check_victory
@@ -138,9 +151,20 @@ game_loop:
 		jal		check_tile
 		move	$ra, $s0
 		beq		$v1, 1, player_2_turn		# if invalid play, try again
+		
+		addi	$s2, $s2, 1
+		
+		move	$s0, $ra
+		jal		check_victory
+		move	$ra, $s0
+		
+	blt		$s2, 42, game_loop
 	
-	j		game_loop	
-	jr 		$ra
+	la		$a0, cats_game_msg
+	li		$v0, 4
+	syscall
+	
+	j		again	
 
 ####################################################################################################
 # function: get_input
@@ -271,7 +295,9 @@ check_victory:
 		check_diagonal_r_prep:
 			li		$t2, 1						# how many in a row
 			move	$t3, $t0					# working array
+			move	$t8, $t6						# working column
 		check_diagonal_r:
+			bgt		$t8, 4, check_diagonal_l_prep	# if column is greater than 4, not able to connect four on this diagonal
 			lw		$t4, -24($t3)					#
 			bne		$t1, $t4, check_diagonal_l_prep
 			addi	$t3, $t3, -24
@@ -281,7 +307,9 @@ check_victory:
 		check_diagonal_l_prep:
 			li		$t2, 1						# how many in a row
 			move	$t3, $t0					# working array
+			move	$t8, $t6						# working column
 		check_diagonal_l:
+			blt		$t8, 4, next_cell	# if column is less than 4, not able to connect four on this diagonal
 			lw		$t4, -32($t3)					#
 			bne		$t1, $t4, next_cell
 			addi	$t3, $t3, -32
