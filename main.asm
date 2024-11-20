@@ -420,22 +420,22 @@ display_board:								#
 #	$a0 - buffer address
 #	$a1 - buffer length
 ####################################################################################################
-re_enter:							#
-	la	$a0, buffer					# load buffer address
-	li	$a1, 2						# length of buffer
-	jal	reset_buffer				# clear the buffer
-	
-	li	$t0, 0
-	li	$t1, 0
-	la	$t2, board_state
-	reset_board:
-		sw	$t0, 0($t2)
-		
-		addi	$t1, $t1, 1
-		addi	$t2, $t2, 4
-		bne		$t1, 42, reset_board
-	j	main						# let's do the time warp again!
-									#
+re_enter:								#
+	la	$a0, buffer						# load buffer address
+	li	$a1, 2							# length of buffer
+	jal	reset_buffer					# clear the buffer
+										#
+	li	$t0, 0							# 0 to reset the board state
+	li	$t1, 0							# cell counter
+	la	$t2, board_state				# load the board
+	reset_board:						#
+		sw	$t0, 0($t2)					# store a 0 in the current index of the board
+										#
+		addi	$t1, $t1, 1				# iterate the cell
+		addi	$t2, $t2, 4				# go to next word on board
+		bne		$t1, 42, reset_board	# as long as you're under 42 cells, keep going
+	j	main							# let's do the time warp again!
+										#
 ####################################################################################################
 # function: reset_buffer
 # purpose: to reset the buffer for stability and security
