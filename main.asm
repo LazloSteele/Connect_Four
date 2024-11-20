@@ -341,14 +341,15 @@ check_victory:										#
 # purpose: to raise an invalid play flag and return to caller
 # registers used:
 ####################################################################################################
-invalid_play:
+invalid_play:					#
 	la	$a0, invalid_msg		# 
 	li	$v0, 4					#
 	syscall						# print invalid message
-	
-	li	$v1, 1
-	
-	jr $ra
+								#
+	li	$v1, 1					# set invalid flag
+								#
+	jr $ra						# and return to caller
+								#
 ####################################################################################################
 # function: display_board
 # purpose: to display the current game state to player
