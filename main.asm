@@ -240,103 +240,102 @@ check_tile:								#
 # purpose: to check if a player wins in their turn
 # registers used:
 ####################################################################################################
-check_victory:
-	la		$t0, board_state
-	li		$t5, 0
+check_victory:										#
+	la		$t0, board_state						# load positions of all tiles
+	li		$t5, 0									# 
 	li		$t6, 1									# column counter
 	li		$t7, 1									# row counter
-	for_cell:
+	for_cell:										#
 		lw		$t1, 0($t0)							# working cell
-		ble		$t6, 7, same_row
+		ble		$t6, 7, same_row					#
 		li		$t6, 1								# reset column
 		addi	$t7, $t7, 1							# iterate row
-		same_row:
+		same_row:									#
 		beqz	$t1, next_cell						# if cell is empty, skip
 		li		$t2, 1								# how many in a row
 		move	$t3, $t0							# working array
 		move	$t8, $t6							# working column
 		check_horizontal:							#
 			bgt		$t8, 4, check_vertical_prep		# if column is greater than 4, not able to connect four on this row
-			lw		$t4, 4($t3)						#
-			bne		$t1, $t4, check_vertical_prep	#
-			addi	$t3, $t3, 4						#
+			lw		$t4, 4($t3)						# look at the next cell to the right
+			bne		$t1, $t4, check_vertical_prep	# if no match then check vertical
+			addi	$t3, $t3, 4						# iterate to the next cell
 			addi	$t2, $t2, 1						# if equal columns add 1 to the count
 			addi	$t8, $t8, 1						# increment column counter
-			beq		$t2, 4, victory					#
-			j		check_horizontal				#
+			beq		$t2, 4, victory					# if four in a row then somebody wins!
+			j		check_horizontal				# keep checking!
+													#
 		check_vertical_prep:						#
 			li		$t2, 1							# how many in a row
 			move	$t3, $t0						# working array
 			move	$t8, $t7						# working row
 		check_vertical:								#
-			blt		$t8, 3, check_diagonal_r_prep		# if row is less than 3, not able to connect four on this column
-			lw		$t4, -28($t3)					#
-			bne		$t1, $t4, check_diagonal_r_prep
-			addi	$t3, $t3, -28
-			addi	$t2, $t2, 1					# if equal columns add 1 to the count
-			beq		$t2, 4, victory
-			j		check_vertical
-		check_diagonal_r_prep:
-			li		$t2, 1						# how many in a row
-			move	$t3, $t0					# working array
+			blt		$t8, 3, check_diagonal_r_prep	# if row is less than 3, not able to connect four on this column
+			lw		$t4, -28($t3)					# -28 is one row above
+			bne		$t1, $t4, check_diagonal_r_prep	# if chosen cell doesn't have an adjacent match then skip!
+			addi	$t3, $t3, -28					# go up one!
+			addi	$t2, $t2, 1						# if equal columns add 1 to the count
+			beq		$t2, 4, victory					# if there are four in a row then somebody wins!
+			j		check_vertical					# keep checking!
+													#
+		check_diagonal_r_prep:						#
+			li		$t2, 1							# how many in a row
+			move	$t3, $t0						# working array
 			move	$t8, $t6						# working column
-		check_diagonal_r:
+		check_diagonal_r:							#
 			bgt		$t8, 4, check_diagonal_l_prep	# if column is greater than 4, not able to connect four on this diagonal
 			lw		$t4, -24($t3)					#
-			bne		$t1, $t4, check_diagonal_l_prep
-			addi	$t3, $t3, -24
-			addi	$t2, $t2, 1					# if equal columns add 1 to the count
-			beq		$t2, 4, victory
-			j		check_diagonal_r
-		check_diagonal_l_prep:
-			li		$t2, 1						# how many in a row
-			move	$t3, $t0					# working array
+			bne		$t1, $t4, check_diagonal_l_prep	#
+			addi	$t3, $t3, -24					#
+			addi	$t2, $t2, 1						# if equal columns add 1 to the count
+			beq		$t2, 4, victory					#
+			j		check_diagonal_r				#
+													#
+		check_diagonal_l_prep:						#
+			li		$t2, 1							# how many in a row
+			move	$t3, $t0						# working array
 			move	$t8, $t6						# working column
-		check_diagonal_l:
-			blt		$t8, 4, next_cell	# if column is less than 4, not able to connect four on this diagonal
+		check_diagonal_l:							#
+			blt		$t8, 4, next_cell				# if column is less than 4, not able to connect four on this diagonal
 			lw		$t4, -32($t3)					#
-			bne		$t1, $t4, next_cell
-			addi	$t3, $t3, -32
-			addi	$t2, $t2, 1					# if equal columns add 1 to the count
-			beq		$t2, 4, victory
-			j		check_diagonal_l
+			bne		$t1, $t4, next_cell				#
+			addi	$t3, $t3, -32					#
+			addi	$t2, $t2, 1						# if equal columns add 1 to the count
+			beq		$t2, 4, victory					#
+			j		check_diagonal_l				#
+													#
+		next_cell:									#
+			addi	$t0, $t0, 4						# move the board position over by 4
+			addi	$t5, $t5, 1						# iterate cell number
+			addi	$t6, $t6, 1						# iterate row number
+			beq		$t5, 42, no_win					# if all cells have been checked and nobody wins the go back to the game!
+			j		for_cell						# otherwise keep checking!
+													#
+	victory:										#
+		move	$s1, $ra							# save return address for nesting
+		jal 	display_board						#
+		move	$ra, $s1							# restore return address for nesting
 
-		next_cell:
-			addi	$t0, $t0, 4
-			addi	$t5, $t5, 1
-			addi	$t6, $t6, 1
-			beq		$t5, 42, no_win
-			j		for_cell
-			
-	victory:
-		beq		$t1, 1, player1_wins
-		beq		$t1, 2, player2_wins
-		
-	player1_wins:
-		move	$s1, $ra						# save return address for nesting
-		jal 	display_board
-		move	$ra, $s1						# restore return address for nesting
-
-		la		$a0, p1_wins
-		li		$v0, 4
-		syscall
-				
-		j		again
-		
-	player2_wins:
-		move	$s1, $ra						# save return address for nesting
-		jal 	display_board
-		move	$ra, $s1						# restore return address for nesting
-		
-		la		$a0, p2_wins
-		li		$v0, 4
-		syscall
-		
-		j		again
-		
-	no_win:
-		jr		$ra
-		
+		beq		$t1, 1, player1_wins				# if the connect four is for p1 then they win
+		beq		$t1, 2, player2_wins				# if it is for p2 then p2 wins!
+													#
+	player1_wins:									#													#
+		la		$a0, p1_wins						#
+		li		$v0, 4								#
+		syscall										# print p1 victory message
+													#
+		j		again								# play again?
+													#
+	player2_wins:									#
+		la		$a0, p2_wins						#
+		li		$v0, 4								#
+		syscall										# print p2 victory message
+													#
+		j		again								# play again?
+													#
+	no_win:											#
+		jr		$ra									# if no win then return to caller
+													#
 ####################################################################################################
 # function: invalid_play
 # purpose: to raise an invalid play flag and return to caller
