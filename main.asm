@@ -235,22 +235,33 @@ check_tile:
 check_victory:
 	la		$t0, board_state
 	li		$t5, 0
+	li		$t6, 1									# column counter
+	li		$t7, 1									# row counter
 	for_cell:
-		lw		$t1, 0($t0)						# working cell
-		beqz	$t1, next_cell					# if cell is empty, skip
-		li		$t2, 1							# how many in a row
-		move	$t3, $t0						# working array
-		check_horizontal:
-			lw		$t4, 4($t3)					#
-			bne		$t1, $t4, check_vertical_prep
-			addi	$t3, $t3, 4
-			addi	$t2, $t2, 1					# if equal columns add 1 to the count
-			beq		$t2, 4, victory
-			j		check_horizontal
-		check_vertical_prep:
-			li		$t2, 1						# how many in a row
-			move	$t3, $t0					# working array
-		check_vertical:
+		lw		$t1, 0($t0)							# working cell
+		ble		$t6, 7, same_row
+		li		$t6, 1								# reset column
+		addi	$t7, $t7, 1							# iterate row
+		same_row:
+		beqz	$t1, next_cell						# if cell is empty, skip
+		li		$t2, 1								# how many in a row
+		move	$t3, $t0							# working array
+		move	$t8, $t6							# working column
+		check_horizontal:							#
+			bgt		$t8, 4, check_vertical_prep		# if column is greater than 4, not able to connect four on this row
+			lw		$t4, 4($t3)						#
+			bne		$t1, $t4, check_vertical_prep	#
+			addi	$t3, $t3, 4						#
+			addi	$t2, $t2, 1						# if equal columns add 1 to the count
+			addi	$t8, $t8, 1						# increment column counter
+			beq		$t2, 4, victory					#
+			j		check_horizontal				#
+		check_vertical_prep:						#
+			li		$t2, 1							# how many in a row
+			move	$t3, $t0						# working array
+			move	$t8, $t7						# working row
+		check_vertical:								#
+			blt		$t8, 3, check_diagonal_r_prep		# if row is less than 3, not able to connect four on this column
 			lw		$t4, -28($t3)					#
 			bne		$t1, $t4, check_diagonal_r_prep
 			addi	$t3, $t3, -28
@@ -281,6 +292,7 @@ check_victory:
 		next_cell:
 			addi	$t0, $t0, 4
 			addi	$t5, $t5, 1
+			addi	$t6, $t6, 1
 			beq		$t5, 42, no_win
 			j		for_cell
 			
