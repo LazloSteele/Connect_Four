@@ -12,6 +12,8 @@
 welcome_msg:	.asciiz "\nWelcome to Connect Four. Let's start a two player game...\n"
 plyr_1_prmpt:	.asciiz "\nPlayer 1 select a column [1-7] > "
 plyr_2_prmpt:	.asciiz "\nPlayer 2 select a column [1-7] > "
+p1_wins:		.asciiz "\nPlayer 1 wins!"
+p2_wins:		.asciiz "\nPlayer 2 wins!"
 repeat_msg:		.asciiz "\nGo again? Y/N > "
 invalid_msg:	.asciiz "\nInvalid input. Try again!\n"
 bye: 			.asciiz "\nToodles! ;)"
@@ -31,6 +33,7 @@ board_state:	.word	0, 0, 0, 0, 0, 0, 0,
 						0, 0, 0, 0, 0, 0, 0, 
 						0, 0, 0, 0, 0, 0, 0
 next_row:		.word	28
+victor_flag:	.word	0
 
 buffer:			.space	2
 				
@@ -100,7 +103,12 @@ game_loop:
 		li		$a1, 1
 		jal		check_tile
 		move	$ra, $s0
-	
+		beq		$v1, 1, player_1_turn		# if invalid play, try again
+		
+		move	$s0, $ra
+		jal		check_victory
+		move	$ra, $s0
+		
 	player_2_turn:
 		li		$v1, 0
 	
@@ -129,7 +137,7 @@ game_loop:
 		li		$a1, 2
 		jal		check_tile
 		move	$ra, $s0
-
+		beq		$v1, 1, player_2_turn		# if invalid play, try again
 	
 	j		game_loop	
 	jr 		$ra
@@ -220,6 +228,81 @@ check_tile:
 	jr		$ra
 											#									
 ####################################################################################################
+# function: check_victory
+# purpose: to check if a player wins in their turn
+# registers used:
+####################################################################################################
+check_victory:
+	la		$t0, board_state
+	li		$t5, 0
+	for_cell:
+		lw		$t1, 0($t0)						# working cell
+		beqz	$t1, next_cell					# if cell is empty, skip
+		li		$t2, 1							# how many in a row
+		move	$t3, $t0						# working array
+		check_horizontal:
+			lw		$t4, 4($t3)					#
+			bne		$t1, $t4, check_vertical_prep
+			addi	$t3, $t3, 4
+			addi	$t2, $t2, 1					# if equal columns add 1 to the count
+			beq		$t2, 4, victory
+			j		check_horizontal
+		check_vertical_prep:
+			li		$t2, 1						# how many in a row
+			move	$t3, $t0					# working array
+		check_vertical:
+			lw		$t4, -28($t3)					#
+			bne		$t1, $t4, check_diagonal_prep
+			addi	$t3, $t3, -28
+			addi	$t2, $t2, 1					# if equal columns add 1 to the count
+			beq		$t2, 4, victory
+			j		check_vertical
+		check_diagonal_prep:
+			li		$t2, 1						# how many in a row
+			move	$t3, $t0					# working array
+		check_diagonal:
+			lw		$t4, -24($t3)					#
+			bne		$t1, $t4, next_cell
+			addi	$t3, $t3, -24
+			addi	$t2, $t2, 1					# if equal columns add 1 to the count
+			beq		$t2, 4, victory
+			j		check_diagonal
+		next_cell:
+			addi	$t0, $t0, 4
+			addi	$t5, $t5, 1
+			beq		$t5, 42, no_win
+			j		for_cell
+			
+	victory:
+		beq		$t1, 1, player1_wins
+		beq		$t1, 2, player2_wins
+		
+	player1_wins:
+		move	$s1, $ra						# save return address for nesting
+		jal 	display_board
+		move	$ra, $s1						# restore return address for nesting
+
+		la		$a0, p1_wins
+		li		$v0, 4
+		syscall
+				
+		j		again
+		
+	player2_wins:
+		move	$s1, $ra						# save return address for nesting
+		jal 	display_board
+		move	$ra, $s1						# restore return address for nesting
+		
+		la		$a0, p2_wins
+		li		$v0, 4
+		syscall
+		
+		j		again
+		
+	no_win:
+		jr		$ra
+		
+####################################################################################################
 # function: invalid_play
 # purpose: to raise an invalid play flag and return to caller
 # registers used:
@@ -302,6 +385,16 @@ re_enter:							#
 	la	$a0, buffer					# load buffer address
 	li	$a1, 2						# length of buffer
 	jal	reset_buffer				# clear the buffer
+	
+	li	$t0, 0
+	li	$t1, 0
+	la	$t2, board_state
+	reset_board:
+		sw	$t0, 0($t2)
+		
+		addi	$t1, $t1, 1
+		addi	$t2, $t2, 4
+		bne		$t1, 42, reset_board
 	j	main						# let's do the time warp again!
 									#
 ####################################################################################################
