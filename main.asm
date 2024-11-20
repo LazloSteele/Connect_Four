@@ -2,7 +2,7 @@
 # Author: Lazlo F. Steele
 # Due Date : Nov. 16, 2024 Course: CSC2025-2H1
 # Created: Nov. 16, 2024
-# Last Modified: Nov. 17, 2024
+# Last Modified: Nov. 19, 2024
 # Functional Description: Play connect four.
 # Language/Architecture: MIPS 32 Assembly
 ####################################################################################################
@@ -83,80 +83,80 @@ welcome:							#
 # purpose: to control the gameplay
 # registers used:
 ####################################################################################################
-game_loop_prep:
-	move $s2, $a0
-game_loop:
-	player_1_turn:
-		li		$v1, 0
-	
-		move	$s0, $ra						# save return address for nesting
-		jal 	display_board
-		move	$ra, $s0						# restore return address for nesting
-		
-		move	$s0, $ra
-		la		$a0, plyr_1_prmpt
-		jal		get_input
-		move	$ra, $s0
-		
-		move	$s0, $ra
-		move	$a0, $v0
-		jal		validate_input
-		move	$ra, $s0		
+game_loop_prep:								#
+	move $s2, $a0							# move the token counter to saved register
+game_loop:									#
+	player_1_turn:							#
+		li		$v1, 0						# initialize invalid play flag
+											#
+		move	$s0, $ra					# save return address for nesting
+		jal 	display_board				# display the current tokens
+		move	$ra, $s0					# restore return address for nesting
+											#
+		move	$s0, $ra					# save return address for nesting
+		la		$a0, plyr_1_prmpt			#
+		jal		get_input					# prompt for user input
+		move	$ra, $s0					# restore return address for nesting
+											#
+		move	$s0, $ra					# save return address for nesting
+		move	$a0, $v0					# move returned user input to argument
+		jal		validate_input				# and validate
+		move	$ra, $s0					# restore return address for nesting
 		beq		$v1, 1, player_1_turn		# if invalid play, try again
+											#
+		move	$s0, $ra					# save return address for nesting
+		move	$a0, $v0					# move validated input to argument
+		jal		format_input				# and format it
+		move	$ra, $s0					# restore return address for nesting
+											#
+		move	$s0, $ra					# save return address for nesting
+		move	$a0, $v0					# move the formatted input to argument
+		li		$a1, 1						# mark as player 1
+		jal		check_tile					# place that tile!
+		move	$ra, $s0					# restore return address for nesting
+		beq		$v1, 1, player_1_turn		# if column full, try again
+											#
+		addi	$s2, $s2, 1					# count the tile as placed
+											#
+		move	$s0, $ra					# save return address for nesting
+		jal		check_victory				# did anyone win?
+		move	$ra, $s0					# restore return address for nesting
+											#
+	player_2_turn:							#
+		li		$v1, 0						# initialize invalid play flag
+											#
+		move	$s0, $ra					# save return address for nesting
+		jal 	display_board				# display the board
+		move	$ra, $s0					# restore return address for nesting
 		
-		move	$s0, $ra
-		move	$a0, $v0
-		jal		format_input
-		move	$ra, $s0	
-		
-		move	$s0, $ra
-		move	$a0, $v0
-		li		$a1, 1
-		jal		check_tile
-		move	$ra, $s0
-		beq		$v1, 1, player_1_turn		# if invalid play, try again
-		
-		addi	$s2, $s2, 1
-		
-		move	$s0, $ra
-		jal		check_victory
-		move	$ra, $s0
-		
-	player_2_turn:
-		li		$v1, 0
-	
-		move	$s0, $ra						# save return address for nesting
-		jal 	display_board
-		move	$ra, $s0						# restore return address for nesting
-		
-		move	$s0, $ra
+		move	$s0, $ra					# save return address for nesting
 		la		$a0, plyr_2_prmpt
 		jal		get_input
-		move	$ra, $s0
+		move	$ra, $s0					# restore return address for nesting
 		
-		move	$s0, $ra
+		move	$s0, $ra					# save return address for nesting
 		move	$a0, $v0
 		jal		validate_input
-		move	$ra, $s0		
+		move	$ra, $s0					# restore return address for nesting
 		beq		$v1, 1, player_2_turn		# if invalid play, try again
 		
-		move	$s0, $ra
+		move	$s0, $ra					# save return address for nesting
 		move	$a0, $v0
 		jal		format_input
-		move	$ra, $s0	
+		move	$ra, $s0					# restore return address for nesting
 		
-		move	$s0, $ra
+		move	$s0, $ra					# save return address for nesting
 		move	$a0, $v0
 		li		$a1, 2
 		jal		check_tile
-		move	$ra, $s0
+		move	$ra, $s0					# restore return address for nesting
 		beq		$v1, 1, player_2_turn		# if invalid play, try again
 		
 		addi	$s2, $s2, 1
 		
-		move	$s0, $ra
+		move	$s0, $ra					# save return address for nesting
 		jal		check_victory
-		move	$ra, $s0
+		move	$ra, $s0					# restore return address for nesting
 		
 	blt		$s2, 42, game_loop
 	
