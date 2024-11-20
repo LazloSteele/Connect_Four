@@ -355,60 +355,64 @@ invalid_play:					#
 # purpose: to display the current game state to player
 # registers used:
 ####################################################################################################
-display_board:
-	li		$v0, 4					# 
-	li		$t0, 0					# row counter
-	la		$t2, board_state
-	
-	new_row:
-		beq		$t0, 6, board_done
-		li		$t1, 0					# column counter
-		
-		li		$v0, 11
-		la		$a0, newline
-		lb		$a0, 0($a0)
-		syscall
-		la		$a0, bar
-		lb		$a0, 0($a0)
-		syscall
-		new_column:
-			lw		$t3, 0($t2)
-			
-			beq		$t3, 1, cell_x
-			beq		$t3, 2, cell_o
-			
-			la		$a0, empty_glyph
-			lb		$a0, 0($a0)
-			syscall
-			j		cell_done
-			
-			cell_x:
-				la		$a0, p1_glyph
-				lb		$a0, 0($a0)
-				syscall
-				j		cell_done		
-			cell_o:
-				la		$a0, p2_glyph
-				lb		$a0, 0($a0)
-				syscall
-				j		cell_done		
-			cell_done:			
-				la		$a0, bar
-				lb		$a0, 0($a0)
-				syscall
-			
-				addi	$t1, $t1, 1
+display_board:								#
+	li		$v0, 4							# 
+	li		$t0, 0							# row counter
+	la		$t2, board_state				# position of all tiles
+											#
+	new_row:								#
+		beq		$t0, 6, board_done			# if all six rows then board is printed
+		li		$t1, 0						# column counter
+											#
+		li		$v0, 11						#
+		la		$a0, newline				#
+		lb		$a0, 0($a0)					#
+		syscall								# print newline
+		la		$a0, bar					#
+		lb		$a0, 0($a0)					#
+		syscall								# print "|" to start row
+											#
+		new_column:							#
+			lw		$t3, 0($t2)				# load the token value
+											#
+			beq		$t3, 1, cell_x			# if p1 then go to X
+			beq		$t3, 2, cell_o			# if p2 then go to O
+											#
+			la		$a0, empty_glyph		# otherwise it's empty
+			lb		$a0, 0($a0)				#
+			syscall							# and print empty glyph
+			j		cell_done				# 
+											#
+			cell_x:							#
+				la		$a0, p1_glyph		#
+				lb		$a0, 0($a0)			#
+				syscall						# print X
+				j		cell_done			#
+											#
+			cell_o:							#
+				la		$a0, p2_glyph		#
+				lb		$a0, 0($a0)			#
+				syscall						# print O
+				j		cell_done			#
+											#
+			cell_done:						#
+				la		$a0, bar			#
+				lb		$a0, 0($a0)			#
+				syscall						# close cell with "|"
+											#
+				addi	$t1, $t1, 1			# iterate column counter
 				addi	$t2, $t2, 4			# iterate to next entry on board_state
-				bne		$t1, 7, new_column
-		addi	$t0, $t0, 1
-		j		new_row
-	board_done:
-		la		$a0, bottom
-		li		$v0, 4
-		syscall
-									#
-	jr		$ra						#
-									#
+				bne		$t1, 7, new_column	# as long as there is less than 7 columns in row, make new column
+		addi	$t0, $t0, 1					# otherwise iterate your row counter
+		j		new_row						# and make a new row
+											#
+	board_done:								#
+		la		$a0, bottom					#
+		li		$v0, 4						#
+		syscall								# print the bottom of the board
+											#
+	jr		$ra								# and return to caller
+											#
 ####################################################################################################
 # function: re-enter
 # purpose: to clear the buffer and re-enter the main loop
