@@ -252,21 +252,32 @@ check_victory:
 			move	$t3, $t0					# working array
 		check_vertical:
 			lw		$t4, -28($t3)					#
-			bne		$t1, $t4, check_diagonal_prep
+			bne		$t1, $t4, check_diagonal_r_prep
 			addi	$t3, $t3, -28
 			addi	$t2, $t2, 1					# if equal columns add 1 to the count
 			beq		$t2, 4, victory
 			j		check_vertical
-		check_diagonal_prep:
+		check_diagonal_r_prep:
 			li		$t2, 1						# how many in a row
 			move	$t3, $t0					# working array
-		check_diagonal:
+		check_diagonal_r:
 			lw		$t4, -24($t3)					#
-			bne		$t1, $t4, next_cell
+			bne		$t1, $t4, check_diagonal_l_prep
 			addi	$t3, $t3, -24
 			addi	$t2, $t2, 1					# if equal columns add 1 to the count
 			beq		$t2, 4, victory
-			j		check_diagonal
+			j		check_diagonal_r
+		check_diagonal_l_prep:
+			li		$t2, 1						# how many in a row
+			move	$t3, $t0					# working array
+		check_diagonal_l:
+			lw		$t4, -32($t3)					#
+			bne		$t1, $t4, next_cell
+			addi	$t3, $t3, -32
+			addi	$t2, $t2, 1					# if equal columns add 1 to the count
+			beq		$t2, 4, victory
+			j		check_diagonal_l
+
 		next_cell:
 			addi	$t0, $t0, 4
 			addi	$t5, $t5, 1
